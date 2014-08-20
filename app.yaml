@@ -5,11 +5,16 @@ api_version: 1
 threadsafe: true
 
 handlers:
+
+# - url: /admin/.*
+#   script: $PYTHON_LIB/google/appengine/ext/admin
+#   login: admin
+
 - url: /stylesheets
   static_dir: stylesheets
 
 - url: /.*
-  script: guestbook.application
+  script: phone_home.application
 
 # [START libraries]
 libraries:

@@ -27,12 +27,53 @@ def guestbook_key(guestbook_name=DEFAULT_GUESTBOOK_NAME):
     """Constructs a Datastore key for a Guestbook entity with guestbook_name."""
     return ndb.Key('Guestbook', guestbook_name)
 
+def get_parent():
+    return ndb.Key('phone-home Parent', 'phone-home Parent name')
 
 class Greeting(ndb.Model):
     """Models an individual Guestbook entry with author, content, and date."""
     author = ndb.UserProperty()
     content = ndb.StringProperty(indexed=False)
     date = ndb.DateTimeProperty(auto_now_add=True)
+
+class AMILaunch(ndb.Model):
+    """Models a launch of a BioC AMI"""
+    is_bioc_account = ndb.BooleanProperty()
+    is_aws_ip = ndb.BooleanProperty()
+    ami_id = ndb.StringProperty()
+    ami_name = ndb.StringProperty()
+    ami_description = ndb.StringProperty()
+    instance_type = ndb.StringProperty()
+    region = ndb.StringProperty()
+    date = ndb.DateTimeProperty(auto_now_add=True)
+    availability_zone = ndb.StringProperty()
+
+
+class AWSHandler(webapp2.RequestHandler):
+    def post(self):
+        # remote_addr shows up as "::1" when calling from localhost
+        # or is it when using the simulated version of the 
+        # GAE environment? not sure.
+        # print("remote ip is %s" % self.request.remote_addr)
+        raw = self.request.body
+        try:
+            obj = json.decode(raw)
+        except ValueError:
+            self.response.out.write("invalid json")
+            return
+
+        ami_launch = AMILaunch(parent=get_parent())
+        ami_launch.ami_id = obj['imageId']
+        ami_launch.instance_type = obj['instanceType']
+        ami_launch.region = obj['region']
+        ami_launch.availability_zone = obj['availabilityZone']
+        #hh
+
+
+        ami_launch.put()
+
+        self.response.out.write("hello\n")
+
 
 
 # [START main_page]
@@ -62,15 +103,6 @@ class MainPage(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))
 # [END main_page]
-
-class AWSHandler(webapp2.RequestHandler):
-    def post(self):
-        raw = self.request.body
-        try:
-            obj = json.decode(raw)
-            self.response.out.write("hello")
-        except ValueError:
-            self.response.out.write("invalid json")
 
 
 class Guestbook(webapp2.RequestHandler):

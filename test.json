@@ -1,23 +1,16 @@
 {
-    "glossary": {
-        "title": "example glossary",
-		"GlossDiv": {
-            "title": "S",
-			"GlossList": {
-                "GlossEntry": {
-                    "ID": "SGML",
-					"SortAs": "SGML",
-					"GlossTerm": "Standard Generalized Markup Language",
-					"Acronym": "SGML",
-					"Abbrev": "ISO 8879:1986",
-					"GlossDef": {
-                        "para": "A meta-markup language, used to create markup languages such as DocBook.",
-						"GlossSeeAlso": ["GML", "XML"]
-                    },
-					"GlossSee": "markup"
-                }
-            }
-        }
-    }
+  "instanceId" : "i-48b5bb65",
+  "billingProducts" : null,
+  "imageId" : "ami-e2dc278a",
+  "architecture" : "x86_64",
+  "pendingTime" : "2014-08-20T17:22:21Z",
+  "instanceType" : "t1.micro",
+  "accountId" : "555219204010",
+  "kernelId" : "aki-0b4aa462",
+  "ramdiskId" : null,
+  "region" : "us-east-1",
+  "version" : "2010-08-31",
+  "availabilityZone" : "us-east-1b",
+  "privateIp" : "10.178.172.95",
+  "devpayProductCodes" : null
 }
-
