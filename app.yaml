@@ -22,4 +22,6 @@ libraries:
   version: latest
 - name: jinja2
   version: latest
+- name: ssl
+  version: "latest"  # or "2.7", as of this writing (4.30.13)
 # [END libraries]
