@@ -1,13 +1,3 @@
-
-# FIXME - in future we might want to make an AWS call that gives
-# us into about the AMI that was launched (full name and description).
-# Currently all we can do with the AMI-ID we get back from amazon
-# is look in config.yml for our website, where it MAY match one of the
-# official BioC AMIs. If we have other public AMIs whose usage we
-# want to track we should revisit this, probably using boto
-# to make a describe-images call (using an IAM user who can do
-# nothing else).
-
 # [START imports]
 import os
 import urllib
@@ -20,7 +10,6 @@ import jinja2
 import webapp2
 import yaml
 import urllib2
-import pprint
 import boto.ec2
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -29,25 +18,12 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 # [END imports]
 
-DEFAULT_GUESTBOOK_NAME = 'default_guestbook'
-
-
-# We set a parent key on the 'Greetings' to ensure that they are all in the same
-# entity group. Queries across the single entity group will be consistent.
-# However, the write rate should be limited to ~1/second.
-
-def guestbook_key(guestbook_name=DEFAULT_GUESTBOOK_NAME):
-    """Constructs a Datastore key for a Guestbook entity with guestbook_name."""
-    return ndb.Key('Guestbook', guestbook_name)
-
 def get_parent():
     return ndb.Key('phone-home Parent', 'phone-home Parent name')
 
 def get_bioc_version(ami_id):
     response = urllib2.urlopen('https://raw.githubusercontent.com/Bioconductor/bioconductor.org/master/config.yaml') 
     obj = yaml.load(response)
-    print("yaml obj is:")
-    print(obj['ami_ids'])
     for k,v in obj['ami_ids'].iteritems():
         if v == ami_id:
             return k.replace("bioc", "").replace("_", ".")
@@ -60,16 +36,11 @@ def get_ami_info(ami_id):
     conn = boto.ec2.connect_to_region("us-east-1",
         aws_access_key_id=config['amazon_access_key'],
         aws_secret_access_key=config['amazon_secret_key'])
-    img = conn.get_all_images([ami_id])
-    return({name: img[0].name, description: img[0].description})
-
-
-
-class Greeting(ndb.Model):
-    """Models an individual Guestbook entry with author, content, and date."""
-    author = ndb.UserProperty()
-    content = ndb.StringProperty(indexed=False)
-    date = ndb.DateTimeProperty(auto_now_add=True)
+    try:
+        img = conn.get_all_images([ami_id])
+        return({name: img[0].name, description: img[0].description})
+    except:
+        return None
 
 class AMILaunch(ndb.Model):
     """Models a launch of a BioC AMI"""
@@ -111,68 +82,18 @@ class AWSHandler(webapp2.RequestHandler):
         ami_launch.bioc_version = get_bioc_version(obj['imageId'])
 
         ami_info = get_ami_info(obj['imageId'])
-        ami_launch.ami_name = ami_info['name']
-        ami.launch.ami_description = ami_info['description']
+        if ami_info is not None:
+            ami_launch.ami_name = ami_info['name']
+            ami.launch.ami_description = ami_info['description']
 
         ami_launch.put()
 
-        self.response.out.write("hello\n")
+        self.response.out.write("thanx\n")
 
 
-
-# [START main_page]
-class MainPage(webapp2.RequestHandler):
-
-    def get(self):
-        guestbook_name = self.request.get('guestbook_name',
-                                          DEFAULT_GUESTBOOK_NAME)
-        greetings_query = Greeting.query(
-            ancestor=guestbook_key(guestbook_name)).order(-Greeting.date)
-        greetings = greetings_query.fetch(10)
-
-        if users.get_current_user():
-            url = users.create_logout_url(self.request.uri)
-            url_linktext = 'Logout'
-        else:
-            url = users.create_login_url(self.request.uri)
-            url_linktext = 'Login'
-
-        template_values = {
-            'greetings': greetings,
-            'guestbook_name': urllib.quote_plus(guestbook_name),
-            'url': url,
-            'url_linktext': url_linktext,
-        }
-
-        template = JINJA_ENVIRONMENT.get_template('index.html')
-        self.response.write(template.render(template_values))
-# [END main_page]
-
-
-class Guestbook(webapp2.RequestHandler):
-
-    def post(self):
-        # We set the same parent key on the 'Greeting' to ensure each Greeting
-        # is in the same entity group. Queries across the single entity group
-        # will be consistent. However, the write rate to a single entity group
-        # should be limited to ~1/second.
-        guestbook_name = self.request.get('guestbook_name',
-                                          DEFAULT_GUESTBOOK_NAME)
-        greeting = Greeting(parent=guestbook_key(guestbook_name))
-
-        if users.get_current_user():
-            greeting.author = users.get_current_user()
-
-        greeting.content = self.request.get('content')
-        greeting.put()
-
-        query_params = {'guestbook_name': guestbook_name}
-        self.redirect('/?' + urllib.urlencode(query_params))
 
 
 application = webapp2.WSGIApplication([
-    ('/', MainPage),
-    ('/sign', Guestbook),
     ('/phone-home', AWSHandler)
 ], debug=True)
 
@@ -283,5 +204,4 @@ def is_aws_ip(ip):
 54.223.0.0/16 (54.223.0.0 - 54.223.255.255)
 96.127.0.0/18 (96.127.0.0 - 96.127.63.255)
 """
-    print("hi")
     ip_segs = ip.split(".")
