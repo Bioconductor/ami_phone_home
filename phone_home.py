@@ -57,6 +57,16 @@ class AMILaunch(ndb.Model):
 
 
 class AWSHandler(webapp2.RequestHandler):
+    def get(self):
+        query = AMILaunch.query(ancestor=get_parent())
+        hits = query.fetch()
+        template = JINJA_ENVIRONMENT.get_template('index.html')
+        template_values = {
+            'hits': hits,
+            'numhits': len(hits),
+        }
+        self.response.write(template.render(template_values))
+
     def post(self):
         # remote_addr shows up as "::1" when calling from localhost
         # or is it when using the simulated version of the 

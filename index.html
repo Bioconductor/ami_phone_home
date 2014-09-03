@@ -3,30 +3,80 @@
 <html>
 <head>
   <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.2/css/jquery.dataTables.css">
+  
+<!-- jQuery -->
+<script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+  
+<!-- DataTables -->
+<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.2/js/jquery.dataTables.js"></script>
+
+<script type="text/javascript">
+$(document).ready( function () {
+  $.fn.dataTableExt.afnFiltering.push(function(oSettings, aData, iDataIndex) {
+        var checked = $('#checkbox').is(':checked');
+        if (checked)
+          return aData[6] != "True";
+        else
+          return true
+    });
+
+    var oTable = $('#hit_table').dataTable({
+      "order": [[7, "desc"]]
+    });
+
+    $('#checkbox').on("click", function(e) {
+        console.log('click');
+        oTable.fnDraw();
+        console.log("num is " + oTable.fnSettings().fnRecordsDisplay());
+        var numRows = oTable.fnSettings().fnRecordsDisplay();
+        $('#num_entries').html(numRows);
+    });
+
+} );
+</script>
+
 </head>
   <body>
-    {% for greeting in greetings %}
-      {% if greeting.author %}
-        <b>{{ greeting.author.nickname() }}</b> wrote:
-      {% else %}
-       An anonymous person wrote:
-      {% endif %}
-      <blockquote>{{ greeting.content }}</blockquote>
-    {% endfor %}
+    <h1>ami phone home</h1>
 
-    <form action="/sign?guestbook_name={{ guestbook_name }}" method="post">
-      <div><textarea name="content" rows="3" cols="60"></textarea></div>
-      <div><input type="submit" value="Sign Guestbook"></div>
-    </form>
+    <table id="hit_table" class="display">
+      <thead>
+        <tr>
+        <th>ami-id</th>
+        <th>bioc version</th>
+        <th>ami name</th>
+        <th>instance type</th>
+        <th>region</th>
+        <th>availability zone</th>
+        <th>is bioc account</th>
+        <th>date</th>
+      </tr>
+      </thead>
+      <tbody>
+{% for hit in hits %}
+      <tr>
+        <td>{{hit.ami_id}}</td>
+        <td>{{hit.bioc_Version}}</td>
+        <td>{{hit.ami_name}}</td>
+        <td>{{hit.instance_type}}</td>
+        <td>{{hit.region}}</td>
+        <td>{{hit.availability_zone}}</td>
+        <td>{{hit.is_bioc_account}}</td>
+        <td>{{hit.date}}</td>
+
+      </tr>
+{% endfor %}
+      </tbody>
+    </table>
+
 
     <hr>
 
-    <form>Guestbook name:
-      <input value="{{ guestbook_name }}" name="guestbook_name">
-      <input type="submit" value="switch">
-    </form>
-
-    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+    <p>Number of entries: <span id="num_entries">{{numhits}}</span></p>
+    <p><input type="checkbox" id="checkbox"/> Hide BioC hits</p>
 
   </body>
 </html>
