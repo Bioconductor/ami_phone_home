@@ -55,6 +55,9 @@ class AMILaunch(ndb.Model):
     date = ndb.DateTimeProperty(auto_now_add=True)
     availability_zone = ndb.StringProperty()
 
+class FrontPage(webapp2.RequestHandler):
+    def get(self):
+        return webapp2.redirect('/phone-home')
 
 class AWSHandler(webapp2.RequestHandler):
     def get(self):
@@ -104,7 +107,8 @@ class AWSHandler(webapp2.RequestHandler):
 
 
 application = webapp2.WSGIApplication([
-    ('/phone-home', AWSHandler)
+    ('/phone-home', AWSHandler),
+    ('/', FrontPage),
 ], debug=True)
 
 def is_aws_ip(ip):
