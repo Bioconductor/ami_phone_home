@@ -1,6 +1,7 @@
 # [START imports]
 import os
 import urllib
+import hashlib
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
@@ -45,6 +46,7 @@ def get_ami_info(ami_id):
 class AMILaunch(ndb.Model):
     """Models a launch of a BioC AMI"""
     is_bioc_account = ndb.BooleanProperty()
+    account_hash = ndb.StringProperty()
     is_aws_ip = ndb.BooleanProperty()
     ami_id = ndb.StringProperty()
     bioc_version = ndb.StringProperty()
@@ -85,6 +87,8 @@ class AWSHandler(webapp2.RequestHandler):
 
         ami_launch = AMILaunch(parent=get_parent())
         ami_launch.is_bioc_account = obj['accountId'] == "555219204010"
+        if not ami_launch.is_bioc_account:
+            ami_launch.account_hash = hashlib.md5(obj['accountId'].encode()).hexdigest()
         ami_launch.ami_id = obj['imageId']
         ami_launch.instance_type = obj['instanceType']
         ami_launch.region = obj['region']
