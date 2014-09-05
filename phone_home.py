@@ -39,7 +39,7 @@ def get_ami_info(ami_id):
         aws_secret_access_key=config['amazon_secret_key'])
     try:
         img = conn.get_all_images([ami_id])
-        return({name: img[0].name, description: img[0].description})
+        return({'name': img[0].name, 'description': img[0].description})
     except:
         return None
 
@@ -101,7 +101,7 @@ class AWSHandler(webapp2.RequestHandler):
         ami_info = get_ami_info(obj['imageId'])
         if ami_info is not None:
             ami_launch.ami_name = ami_info['name']
-            ami.launch.ami_description = ami_info['description']
+            ami_launch.ami_description = ami_info['description']
 
         ami_launch.put()
 
