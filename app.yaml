@@ -20,8 +20,8 @@ libraries:
   version: latest
 - name: jinja2
   version: latest
-- name: ssl
-  version: "latest"
-- name: boto
-  version: "latest"
+# - name: ssl
+#   version: "latest"
+# - name: boto3
+#   version: "latest"
 # [END libraries]
