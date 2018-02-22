@@ -65,7 +65,7 @@ class FrontPage(webapp2.RequestHandler):
 class AWSHandler(webapp2.RequestHandler):
     def get(self):
         query = AMILaunch.query(ancestor=get_parent())
-        hits = query.fetch()
+        hits = query.fetch(limit=25)
         template = JINJA_ENVIRONMENT.get_template('index.html')
         template_values = {
             'hits': hits,
