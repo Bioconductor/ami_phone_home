@@ -6,15 +6,17 @@
 
 <!-- DataTables CSS -->
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.2/css/jquery.dataTables.css">
-  
+
 <!-- jQuery -->
 <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-  
+
 <!-- DataTables -->
 <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.2/js/jquery.dataTables.js"></script>
 
 <script type="text/javascript">
 $(document).ready( function () {
+
+  var cursor = null;
   $.fn.dataTableExt.afnFiltering.push(function(oSettings, aData, iDataIndex) {
         var checked = $('#checkbox').is(':checked');
         if (checked)
@@ -24,7 +26,30 @@ $(document).ready( function () {
     });
 
     var oTable = $('#hit_table').dataTable({
-      "order": [[7, "desc"]]
+      "order": [[7, "desc"]],
+      "info": false,
+      "pagingType": "simple",
+      "searching": false,
+      "bLengthChange": false,
+      "processing": true,
+      "serverSide": true,
+      "serverMethod": "POST",
+      "ajax": {
+        "url": "/table-data",
+        "data": function(d) {
+            console.log("outgoing (to server): set cursor to " + cursor);
+            d.next_cursor = cursor;
+        },
+        "dataSrc": function(data) {
+            console.log("data is ");
+            console.log(data);
+            console.log("from server, got cursor " + data.next_cursor);
+            cursor = data.next_cursor;
+            console.log("local variable cursor is " + cursor);
+            console.log("cursor is " + data.next_cursor);
+            return data.data; // IMPORTANT! This must be here.
+        }
+      }
     });
 
     $('#checkbox').on("click", function(e) {
@@ -57,28 +82,13 @@ $(document).ready( function () {
       </tr>
       </thead>
       <tbody>
-{% for hit in hits %}
-      <tr>
-        <td>{{hit.ami_id}}</td>
-        <td>{{hit.bioc_version}}</td>
-        <td>{{hit.ami_name}}</td>
-        <td>{{hit.instance_type}}</td>
-        <td>{{hit.region}}</td>
-        <td>{{hit.availability_zone}}</td>
-        <td>{{hit.is_bioc_account}}</td>
-        <td>{{hit.date}}</td>
-        <td>{{hit.account_hash}}</td>
 
-      </tr>
-{% endfor %}
       </tbody>
     </table>
 
 
     <hr>
 
-    <p>Number of entries: <span id="num_entries">{{numhits}}</span></p>
-    <p><input type="checkbox" id="checkbox"/> Hide BioC hits</p>
 
   </body>
 </html>

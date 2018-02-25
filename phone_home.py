@@ -2,13 +2,16 @@
 import os
 import urllib
 import hashlib
+import sys
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
+from google.appengine.datastore.datastore_query import Cursor
 from webapp2_extras import json
 
 import jinja2
 import webapp2
+from webapp2_extras import json
 import yaml
 import urllib2
 import boto.ec2
@@ -56,22 +59,65 @@ class AMILaunch(ndb.Model):
     instance_type = ndb.StringProperty()
     region = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
+    # date = ndb.DateTimeProperty() # only needed when populating synthetic data
     availability_zone = ndb.StringProperty()
 
 class FrontPage(webapp2.RequestHandler):
     def get(self):
         return webapp2.redirect('/phone-home')
 
+class TableData(webapp2.RequestHandler):
+    def post(self):
+        in_obj = self.request.POST
+
+        out_obj = {}
+        out_obj['draw'] = int(in_obj['draw'])
+
+        self.response.content_type = 'application/json'
+
+        count =  99999999 # FIXME if real number of records exceeds this, increment this!!
+        out_obj['recordsTotal'] = count
+        out_obj['recordsFiltered'] = count # OK?
+
+        start = in_obj['start'] # starts at 0
+        pagesize = int(in_obj['length']) # number of rows to return
+
+        cursor = None
+        if len(in_obj['next_cursor']):
+            cursor = Cursor(urlsafe=in_obj['next_cursor'])
+        print("cursor is")
+        if cursor:
+            print(cursor.urlsafe())
+        else:
+            print("(none)")
+
+
+        query = AMILaunch.query(ancestor=get_parent()).order(-AMILaunch.date)
+        rows, next_cursor, more = query.fetch_page(pagesize, start_cursor=cursor)
+
+        if next_cursor:
+            print("urlsafe is")
+            print(next_cursor.urlsafe())
+
+            out_obj['next_cursor'] = next_cursor.urlsafe()
+        else:
+            out_obj['next_cursor'] = None
+            print("urlsafe is None")
+
+        data = []
+
+        for row in rows:
+            data.append([row.ami_id, row.bioc_version, row.ami_name,
+                         row.instance_type, row.region, row.availability_zone,
+                         row.is_bioc_account, str(row.date), row.account_hash])
+
+        out_obj['data'] = data
+        self.response.write(json.encode(out_obj))
+
 class AWSHandler(webapp2.RequestHandler):
     def get(self):
-        query = AMILaunch.query(ancestor=get_parent())
-        hits = query.fetch(limit=25)
         template = JINJA_ENVIRONMENT.get_template('index.html')
-        template_values = {
-            'hits': hits,
-            'numhits': len(hits),
-        }
-        self.response.write(template.render(template_values))
+        self.response.write(template.render())
 
     def post(self):
         # remote_addr shows up as "::1" when calling from localhost
@@ -114,6 +160,7 @@ class AWSHandler(webapp2.RequestHandler):
 application = webapp2.WSGIApplication([
     ('/phone-home', AWSHandler),
     ('/', FrontPage),
+    ('/table-data', TableData),
 ], debug=True)
 
 def is_aws_ip(ip):
